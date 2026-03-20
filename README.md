@@ -81,6 +81,7 @@ We recommend you install the following CLI tools:
 | <a name="module_account_iam_resources"></a> [account\_iam\_resources](#module\_account\_iam\_resources) | ./modules/account-iam-resources | n/a |
 | <a name="module_oidc_config_and_provider"></a> [oidc\_config\_and\_provider](#module\_oidc\_config\_and\_provider) | ./modules/oidc-config-and-provider | n/a |
 | <a name="module_operator_roles"></a> [operator\_roles](#module\_operator\_roles) | ./modules/operator-roles | n/a |
+| <a name="module_rhcs_hcp_additional_controlplane_sg"></a> [rhcs\_hcp\_additional\_controlplane\_sg](#module\_rhcs\_hcp\_additional\_controlplane\_sg) | ./modules/additional-cp-sg | n/a |
 | <a name="module_rhcs_hcp_image_mirrors"></a> [rhcs\_hcp\_image\_mirrors](#module\_rhcs\_hcp\_image\_mirrors) | ./modules/image-mirrors | n/a |
 | <a name="module_rhcs_hcp_kubelet_configs"></a> [rhcs\_hcp\_kubelet\_configs](#module\_rhcs\_hcp\_kubelet\_configs) | ./modules/kubelet-configs | n/a |
 | <a name="module_rhcs_hcp_machine_pool"></a> [rhcs\_hcp\_machine\_pool](#module\_rhcs\_hcp\_machine\_pool) | ./modules/machine-pool | n/a |
@@ -110,6 +111,7 @@ We recommend you install the following CLI tools:
 | <a name="input_autoscaler_pod_priority_threshold"></a> [autoscaler\_pod\_priority\_threshold](#input\_autoscaler\_pod\_priority\_threshold) | To allow users to schedule 'best-effort' pods, which shouldn't trigger Cluster Autoscaler actions, but only run when there are spare resources available. | `number` | `null` | no |
 | <a name="input_aws_additional_allowed_principals"></a> [aws\_additional\_allowed\_principals](#input\_aws\_additional\_allowed\_principals) | The additional allowed principals to use when installing the cluster. | `list(string)` | `null` | no |
 | <a name="input_aws_additional_compute_security_group_ids"></a> [aws\_additional\_compute\_security\_group\_ids](#input\_aws\_additional\_compute\_security\_group\_ids) | The additional security group IDs to be added to the default worker machine pool. | `list(string)` | `null` | no |
+| <a name="input_aws_additional_control_plane_security_group_ids"></a> [aws\_additional\_control\_plane\_security\_group\_ids](#input\_aws\_additional\_control\_plane\_security\_group\_ids) | The additional security group IDs to be added to the control plane VPC endpoint. | `list(string)` | `null` | no |
 | <a name="input_aws_availability_zones"></a> [aws\_availability\_zones](#input\_aws\_availability\_zones) | The AWS availability zones where instances of the default worker machine pool are deployed. Leave empty for the installer to pick availability zones | `list(string)` | `[]` | no |
 | <a name="input_aws_billing_account_id"></a> [aws\_billing\_account\_id](#input\_aws\_billing\_account\_id) | The AWS billing account identifier where all resources are billed. If no information is provided, the data will be retrieved from the currently connected account. | `string` | `null` | no |
 | <a name="input_aws_subnet_ids"></a> [aws\_subnet\_ids](#input\_aws\_subnet\_ids) | The Subnet IDs to use when installing the cluster. | `list(string)` | n/a | yes |
