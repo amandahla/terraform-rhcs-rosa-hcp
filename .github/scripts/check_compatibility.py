@@ -275,11 +275,7 @@ def _gemini_json(system: str, user: str, resource_type: str) -> IntroResult:
             resource_type, None, "low", "", "google-generativeai package not installed"
         )
     genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-<<<<<<< HEAD
     model_name = os.environ.get("GEMINI_MODEL", "gemini-3-flash-preview")
-=======
-    model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
->>>>>>> 100bb6f (OCM-00000 | chore: add compatibility check ai agent workflow)
     model = genai.GenerativeModel(model_name)
     resp = model.generate_content(
         [system, user],
