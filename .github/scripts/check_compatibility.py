@@ -14,15 +14,10 @@ Environment:
   GOOGLE_API_KEY or GEMINI_API_KEY (required for Gemini / google-genai)
   GEMINI_MODEL (optional, default gemini-2.0-flash)
   PR_NUMBER (optional override for local testing)
-
-CLI:
-  python check_compatibility.py --test-gemini
-    Validate only _gemini_json (requires GOOGLE_API_KEY or GEMINI_API_KEY; no GITHUB_TOKEN).
 """
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import re
@@ -48,15 +43,6 @@ RESOURCE_LINE_RE = re.compile(
 )
 VERSIONS_TF_NAME = "versions.tf"
 AWS_PROVIDER_SOURCES = frozenset({"hashicorp/aws", "aws"})
-
-# Shared by llm_intro_version and --test-gemini
-LLM_SYSTEM_INTRO_VERSION = (
-    "You are a precise assistant. Given Terraform AWS provider changelog excerpts, "
-    "identify the FIRST provider version that introduced or added the resource type. "
-    "Respond with JSON only, no markdown: "
-    '{"resource_type":"...","introduced_in":"MAJOR.MINOR.PATCH|null",'
-    '"confidence":"high|medium|low","evidence_line":"short quote or empty"}'
-)
 
 # -----------------------------------------------------------------------------
 # Data models
@@ -239,10 +225,17 @@ def changelog_snippets_for_resource(changelog: str, resource_type: str, max_char
 
 def llm_intro_version(resource_type: str, snippet: str) -> IntroResult:
     """Call Gemini (google-genai) to infer introduction version from changelog excerpt."""
+    system = (
+        "You are a precise assistant. Given Terraform AWS provider changelog excerpts, "
+        "identify the FIRST provider version that introduced or added the resource type. "
+        "Respond with JSON only, no markdown: "
+        '{"resource_type":"...","introduced_in":"MAJOR.MINOR.PATCH|null",'
+        '"confidence":"high|medium|low","evidence_line":"short quote or empty"}'
+    )
     user = f"Resource type: {resource_type}\n\nCHANGELOG excerpts:\n{snippet}\n"
 
     if os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"):
-        return _gemini_json(LLM_SYSTEM_INTRO_VERSION, user, resource_type)
+        return _gemini_json(system, user, resource_type)
     return IntroResult(
         resource_type=resource_type,
         introduced_in=None,
@@ -282,44 +275,6 @@ def _gemini_json(system: str, user: str, resource_type: str) -> IntroResult:
     raw = re.sub(r"^```(?:json)?\s*", "", raw)
     raw = re.sub(r"\s*```$", "", raw)
     return _parse_llm_json(raw, resource_type)
-
-
-def run_gemini_json_self_test() -> int:
-    """
-    Call _gemini_json only (no GitHub, no PR). For local validation.
-
-    Usage:
-      GEMINI_API_KEY=... python check_compatibility.py --test-gemini
-    """
-    if not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")):
-        print("Set GOOGLE_API_KEY or GEMINI_API_KEY.", file=sys.stderr)
-        return 1
-
-    resource_type = "aws_vpc_endpoint_security_group_association"
-    snippet = """## 4.6.0 (March 15, 2022)
-
-NOTES:
-
-* **New Resource:** `aws_vpc_endpoint_security_group_association` ([#13737](https://github.com/hashicorp/terraform-provider-aws/pull/13737))
-"""
-    user = f"Resource type: {resource_type}\n\nCHANGELOG excerpts:\n{snippet}\n"
-    result = _gemini_json(LLM_SYSTEM_INTRO_VERSION, user, resource_type)
-
-    out = {
-        "resource_type": result.resource_type,
-        "introduced_in": result.introduced_in,
-        "confidence": result.confidence,
-        "evidence_line": result.evidence_line,
-        "error": result.error,
-    }
-    print(json.dumps(out, indent=2))
-
-    if result.error:
-        return 1
-    if not result.introduced_in:
-        print("Expected introduced_in to be set for this fixture.", file=sys.stderr)
-        return 1
-    return 0
 
 
 def _parse_llm_json(raw: str, resource_type: str) -> IntroResult:
@@ -535,15 +490,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Terraform AWS provider compatibility checker (PR) or Gemini self-test.",
-    )
-    parser.add_argument(
-        "--test-gemini",
-        action="store_true",
-        help="Only call _gemini_json with a fixed changelog snippet (no GitHub API).",
-    )
-    args = parser.parse_args()
-    if args.test_gemini:
-        raise SystemExit(run_gemini_json_self_test())
     raise SystemExit(main())
