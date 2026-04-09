@@ -6,18 +6,25 @@
   ],
   "dependencyDashboard": true,
   "minimumReleaseAge": "3 days",
-  "ignorePaths": ["modules/**", "examples/**"],
   "packageRules": [
     {
       "description": "Terraform providers and version in the root versions.tf",
       "rangeStrategy": "bump",
       "matchManagers": ["terraform"],
       "matchDepTypes": ["required_provider", "required_version"],
+      "matchFileNames": ["versions.tf"],
       "groupName": "Terraform Providers",
       "groupSlug": "tf-providers",
       "labels": ["ok-to-test"],
       "commitMessagePrefix": "chore(deps): ",
       "automerge": false
+    },
+    {
+      "description": "Terraform providers and version in modules are disabled",
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["required_provider", "required_version"],
+      "matchFileNames": ["modules/**/versions.tf"],
+      "enabled": false
     },
     {
       "description": "Group GitHub Actions updates to avoid many CI pull requests",
@@ -30,6 +37,7 @@
       "description": "Terraform modules grouped by source",
       "matchManagers": ["terraform"],
       "matchDepTypes": ["module"],
+      "matchFileNames": ["modules/**"],
       "groupName": "Terraform Modules",
       "groupSlug": "tf-modules",
       "labels": ["ok-to-test"],
