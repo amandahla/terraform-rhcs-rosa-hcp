@@ -17,6 +17,8 @@ log() {
 : "${BRANCH:?BRANCH is required}"
 : "${COMMIT_MESSAGE:?COMMIT_MESSAGE is required}"
 
+COMMIT_MESSAGE+=$'\n\n'"Signed-off-by: $(git config --get user.name) <$(git config --get user.email)>"
+
 if [ "$#" -lt 1 ]; then
   log "error: no file paths passed"
   exit 1
