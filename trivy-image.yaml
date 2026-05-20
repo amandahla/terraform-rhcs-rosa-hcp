@@ -1,0 +1,25 @@
+---
+# Trivy — container image vulnerability scan for the CI/client Dockerfile image.
+# Used with `trivy image --config trivy-image.yaml <image>`.
+# IaC misconfiguration (Terraform/Dockerfile HCL) uses trivy.yaml via `make security-check`.
+#
+# https://trivy.dev/latest/docs/references/configuration/config-file/
+
+# Fail the job when CRITICAL vulnerabilities are reported.
+exit-code: 1
+
+severity:
+  - CRITICAL
+
+scan:
+  scanners:
+    - vuln
+
+vulnerability:
+  # Only fail on issues with a published fix (actionable for maintainers).
+  ignore-unfixed: true
+
+image:
+  # go install module cache includes upstream Dockerfiles; not part of our image surface.
+  skip-dirs:
+    - "**/go/pkg/mod/**"

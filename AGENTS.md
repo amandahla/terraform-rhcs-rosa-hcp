@@ -55,6 +55,17 @@ Useful skills for this codebase:
 - Use **`sensitive`** on variables and outputs where values must not appear in logs or casual `terraform show` output; avoid echoing secrets in `local` values used only for debugging. Passthrough outputs (**`module.*` → root output**) must match submodule sensitivity—see **Security** in [`.cursor/rules/rosa-hcp-terraform.mdc`](.cursor/rules/rosa-hcp-terraform.mdc).
 - Do not add logging, outputs, or comments that expose credentials or session tokens.
 
+## CI client Dockerfile (Prow)
+
+The root **`Dockerfile`** builds the **OpenShift Prow** client image (`terraform-rhcs-rosa-hcp-clients`). Treat it as a **minimal supply-chain surface**: include **only** what presubmit jobs in [`openshift/release`](https://github.com/openshift/release/tree/master/ci-operator/config/terraform-redhat/terraform-rhcs-rosa-hcp) need today (`make verify`, `make verify-gen`, `make run-example`, and the tools behind `make pre-push-checks`). The image pins the newest Terraform release (`TERRAFORM_VERSION`); module minimum compatibility is enforced separately by GitHub Actions **`verify-min-terraform.yml`** (see **`CONTRIBUTING.md`**).
+
+When changing the Dockerfile:
+
+- **Minimize attack surface** — prefer **`ubi-minimal`** with a **pinned** minor tag (not `:latest`); do not add OS packages, compilers, or CLIs “for convenience” without a job that uses them. The client image runs as **root** so Prow/ci-operator can write to the mounted repo workspace (`make verify`, `make verify-gen`); do not add a non-root `USER` without coordinating `openshift/release` workspace ownership.
+- **Pin versions** — base image, ROSA CLI, and Makefile tools; use **`# renovate:`** comments and existing patterns (`hack/install-release-tool.sh` release binaries, not `go install`, unless unavoidable).
+- **Avoid bloat** — the image is tool-heavy (Terraform, AWS CLI, ROSA, lint binaries); do not grow it with extra runtimes, caches, or unrelated utilities. Prefer release tarballs over full language SDKs in the final image.
+- **Security scans** — `make security-check` / `make security-check-image` are separate from `make pre-push-checks`; fix findings or document narrow suppressions per the **Trivy** section below.
+
 ## Trivy (IaC misconfiguration)
 
 Repo config: root **`trivy.yaml`** (severity, scanners, skips; includes **`examples/`**). CodeRabbit may run Trivy when enabled in **`.coderabbit.yaml`**. References: [Trivy config file](https://trivy.dev/latest/docs/references/configuration/config-file/), [filtering / ignores](https://trivy.dev/latest/docs/configuration/filtering/).
@@ -93,4 +104,4 @@ Use mocks for AWS and RHCS resources to verify logic without requiring live cred
 
 When module behavior branches on a **boolean variable** (e.g. **`count = var.x ? 1 : 0`**), prefer **more than one `run` block** (or clearly separated scenarios) so **both** outcomes are covered—typically **`true` / `count = 1`** and **`false` / `count = 0`**—not only the default or “happy” path. That avoids regressions where the positive case passes but the opt-out path breaks.
 
-For exact commands and pass/fail criteria, follow **`CONTRIBUTING.md`**.
+Before opening a PR, `make pre-push-checks` must pass locally; see **`CONTRIBUTING.md`** for commands and pass/fail criteria.
