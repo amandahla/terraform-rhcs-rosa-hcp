@@ -90,15 +90,20 @@ verify:
 	done
 
 .PHONY: verify-gen
-verify-gen: terraform-docs
-	scripts/verify-gen.sh
+verify-gen: $(TERRAFORM_DOCS)
+	@TERRAFORM_DOCS_BIN="$(TERRAFORM_DOCS)" TERRAFORM_DOCS_VERSION="$(TERRAFORM_DOCS_VERSION)" bash scripts/verify-gen.sh
 
 .PHONY: lint
-lint: $(TFLINT)
+lint:
 	terraform fmt -check -recursive
-	terraform init -backend=false -input=false
-	"$(TFLINT)" --init
-	"$(TFLINT)" --recursive \
+	@command -v tflint >/dev/null 2>&1 || { echo "tflint not found; see https://github.com/terraform-linters/tflint"; exit 1; }
+	@set -euo pipefail; \
+	for d in examples/*/; do \
+	  echo "!! terraform init $$d (tflint) !!"; \
+	  ( cd "$$d" && rm -rf .terraform && terraform init -backend=false -input=false ); \
+	done
+	tflint --init
+	tflint --recursive \
 		--minimum-failure-severity=error \
 		--disable-rule=terraform_required_providers \
 		--disable-rule=terraform_unused_declarations \
